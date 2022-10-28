@@ -22,13 +22,8 @@ start = time.time()
 parser = re.compile(r"(?P<day_of_week>\w+) (?P<month>\w+) (?P<day>\d+) (?P<hour>\d+):(?P<minute>\d+):(?P<second>\d+) (?P<timezone>\w+) (?P<year>\d+)")
 parsed = df["datetime"].apply(lambda x: parser.match(x).groupdict())
 # filter date to current year and month or last month
-current_year = time.strftime("%Y")
-current_month = time.strftime("%m")
-last_month = str(int(current_month) - 1).zfill(2)
-within_range = [True if (x["year"] == current_year and x["month"] == current_month) or (x["year"] == current_year and x["month"] == last_month) else False for x in parsed]
-df = df[within_range]
 df["datetime_str"] = parsed.apply(lambda x: f"{x['year']}-{x['month']}-{x['day']} {x['hour']}:{x['minute']}:{x['second']}")
-df["datetime"] = pd.to_datetime(df["datetime_str"], format="%Y-%b-%d %H:%M:%S")
+df["datetime"] = pd.to_datetime(df["datetime_str"], format="%Y-%b-%d %H:%M:%S", cache=True)
 df = df.drop(columns=["datetime_str"])
 df["date"] = df["datetime"].dt.date
 end = time.time()
