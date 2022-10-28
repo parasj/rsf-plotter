@@ -18,12 +18,16 @@ with urllib.request.urlopen(data_url) as f:
 end = time.time()
 print(f"loaded in {end - start:.2f} seconds")
 
+@st.cache
+def map_date(date):
+    return pd.to_datetime(date, format="%Y-%b-%d %H:%M:%S", cache=True)
+
 start = time.time()
 parser = re.compile(r"(?P<day_of_week>\w+) (?P<month>\w+) (?P<day>\d+) (?P<hour>\d+):(?P<minute>\d+):(?P<second>\d+) (?P<timezone>\w+) (?P<year>\d+)")
 parsed = df["datetime"].apply(lambda x: parser.match(x).groupdict())
 # filter date to current year and month or last month
 df["datetime_str"] = parsed.apply(lambda x: f"{x['year']}-{x['month']}-{x['day']} {x['hour']}:{x['minute']}:{x['second']}")
-df["datetime"] = pd.to_datetime(df["datetime_str"], format="%Y-%b-%d %H:%M:%S", cache=True)
+df["datetime"] = df["datetime_str"].apply(map_date)
 df = df.drop(columns=["datetime_str"])
 df["date"] = df["datetime"].dt.date
 end = time.time()
