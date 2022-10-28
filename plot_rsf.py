@@ -25,7 +25,8 @@ parsed = df["datetime"].apply(lambda x: parser.match(x).groupdict())
 current_year = time.strftime("%Y")
 current_month = time.strftime("%m")
 last_month = str(int(current_month) - 1).zfill(2)
-df = df[(parsed["year"] == current_year) & ((parsed["month"] == current_month) | (parsed["month"] == last_month))]
+within_range = [True if (x["year"] == current_year and x["month"] == current_month) or (x["year"] == current_year and x["month"] == last_month) else False for x in parsed]
+df = df[within_range]
 df["datetime_str"] = parsed.apply(lambda x: f"{x['year']}-{x['month']}-{x['day']} {x['hour']}:{x['minute']}:{x['second']}")
 df["datetime"] = pd.to_datetime(df["datetime_str"], format="%Y-%b-%d %H:%M:%S")
 df = df.drop(columns=["datetime_str"])
