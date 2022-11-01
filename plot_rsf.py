@@ -66,11 +66,11 @@ df = map_dates(df).copy()
 df_today = df[df["date"] == df["date"].max()]
 df_today = df_today.sort_values("datetime")
 df_today = df_today.set_index("datetime")
-opening_time = pd.Timestamp(df_today[df_today["count"] > 20].index.min(), tz="America/Los_Angeles")
+opening_time = pd.Timestamp(df_today[df_today["count"] > 20].index.min())
 df_today = df_today[df_today.index >= opening_time]
 
 # same plot as above but instead, show last 7 historical lines for the same day of the week
-today = pd.Timestamp(df["datetime"].max(), tz="America/Los_Angeles")
+today = pd.Timestamp(df["datetime"].max())
 df_last = df.copy()
 df_last = df_last.sort_values("datetime")
 df_last = df_last.set_index("datetime")
@@ -85,9 +85,9 @@ for date, df_date in df_last.groupby("date"):
     today_dow = today.strftime("%a")
     if date_dow == today_dow:
         df_date = df_date.resample("5min").max()
-        opening_time = pd.Timestamp(df_date[df_date["count"] > 20].index.min(), tz="America/Los_Angeles")
+        opening_time = pd.Timestamp(df_date[df_date["count"] > 20].index.min())
         df_date = df_date[df_date.index >= opening_time]
-        midnight_time = pd.Timestamp(date, tz="America/Los_Angeles").replace(hour=0, minute=0, second=0)
+        midnight_time = pd.Timestamp(date).replace(hour=0, minute=0, second=0)
         df_date["time_on_day"] = (df_date.index - midnight_time) / pd.Timedelta(minutes=1)
         # convert to format for DateFormatter
         df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: pd.Timestamp.today(tz="America/Los_Angeles").replace(hour=int(x // 60), minute=int(x) % 60))
