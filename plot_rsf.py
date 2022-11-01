@@ -77,11 +77,6 @@ df_last = df_last.set_index("datetime")
 fig, ax = plt.subplots(figsize=(7, 3))
 
 # today data
-df_today = df[df["date"] == df["date"].max()]
-df_today = df_today.sort_values("datetime")
-df_today = df_today.set_index("datetime")
-today_opening_time = df_today[df_today["count"] > 20].index.min()
-df_today = df_today[df_today.index >= today_opening_time]
 today_midnight_time = today.replace(hour=0, minute=0, second=0)
 df_today["time_on_day"] = (df_today.index - today_midnight_time) / pd.Timedelta(minutes=1)
 df_today["time_on_day"] = df_today["time_on_day"].apply(lambda x: pd.Timestamp.today().replace(hour=int(x // 60), minute=int(x) % 60))
