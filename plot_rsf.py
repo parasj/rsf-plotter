@@ -10,7 +10,8 @@ import matplotlib.dates as mdates
 
 plt.style.use("ggplot")
 
-truncate_weeks = st.sidebar.slider("Truncate weeks", 0, 12, 3)
+st.write(f"### RSF occupancy")
+truncate_weeks = st.slider("Truncate weeks", 0, 12, 3)
 
 
 @st.cache(ttl=120, suppress_st_warning=True)
@@ -28,14 +29,13 @@ def load_data():
             df = pd.DataFrame(records)
         end = time.time()
     print(f"loaded in {end - start:.2f} seconds")
-    st.sidebar.write(f"Loaded {len(df)} records")
+    st.write(f"Loaded {len(df)} records")
     return df
 
 
 df = load_data().copy()
 last_rec = df.iloc[-1]
-st.write(f"### RSF occupancy as of {last_rec['datetime']}")
-st.write(f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150 * 100):d}**% of capacity")
+st.write(f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150 * 100):d}**% of capacity (updated at {last_rec['datetime']})")
 
 
 @lru_cache(maxsize=4096)
@@ -94,7 +94,6 @@ for date, df_date in df_last.groupby("date"):
         ax.plot(df_date["time_on_day"], df_date["count"], linewidth=1, label=label)
 
 # show today in a thick black line
-st.write(f"Today: {len(df_today)} records")
 ax.plot(df_today["time_on_day"], df_today["count"], linewidth=2, color="black", label="today")
 ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 ax.set_title(f"RSF occupancy by hour (last {truncate_weeks} weeks)")
