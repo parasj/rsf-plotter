@@ -35,7 +35,9 @@ def load_data():
 
 df = load_data().copy()
 last_rec = df.iloc[-1]
-st.write(f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150 * 100):d}**% of capacity (updated at {last_rec['datetime']})")
+st.write(
+    f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150 * 100):d}**% of capacity (updated at {last_rec['datetime']})"
+)
 
 
 @lru_cache(maxsize=4096)
