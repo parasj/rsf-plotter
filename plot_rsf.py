@@ -70,7 +70,7 @@ opening_time = pd.Timestamp(df_today[df_today["count"] > 20].index.min())
 df_today = df_today[df_today.index >= opening_time]
 
 # same plot as above but instead, show last 7 historical lines for the same day of the week
-today = pd.Timestamp.today()
+today = pd.Timestamp.today(tz="US/Pacific")
 df_last = df.copy()
 df_last = df_last.sort_values("datetime")
 df_last = df_last.set_index("datetime")
