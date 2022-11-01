@@ -8,9 +8,10 @@ import re
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-plt.style.use('ggplot')
+plt.style.use("ggplot")
 
-truncate_months = st.sidebar.slider('Truncate months', 0, 12, 1)
+truncate_weeks = st.sidebar.slider("Truncate weeks", 0, 12, 3)
+
 
 @st.cache(ttl=120, suppress_st_warning=True)
 def load_data():
@@ -19,8 +20,8 @@ def load_data():
         data_url = "https://people.eecs.berkeley.edu/~paras/rsf_occupancy.jsonl"
         with urllib.request.urlopen(data_url) as f:
             jsonl = f.read().decode("utf-8").strip().split("\n")
-            if truncate_months > 0:
-                n_records = 60 * 24 * 30 * truncate_months
+            if truncate_weeks > 0:
+                n_records = 60 * 24 * 7 * truncate_weeks
                 records = [json.loads(line) for line in jsonl[-n_records:]]
             else:
                 records = [json.loads(line) for line in jsonl]
@@ -30,19 +31,24 @@ def load_data():
     st.sidebar.write(f"Loaded {len(df)} records")
     return df
 
+
 df = load_data().copy()
 last_rec = df.iloc[-1]
 st.write(f"### RSF occupancy as of {last_rec['datetime']}")
-st.write(f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150)}**% of capacity")
+st.write(f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150 * 100):d}**% of capacity")
+
 
 @lru_cache(maxsize=4096)
 def map_date(date):
     return pd.to_datetime(date, format="%Y-%b-%d %H:%M:%S", cache=True)
 
+
 @st.cache(ttl=120, suppress_st_warning=True)
 def map_dates(df):
     start = time.time()
-    parser = re.compile(r"(?P<day_of_week>\w+) (?P<month>\w+) (?P<day>\d+) (?P<hour>\d+):(?P<minute>\d+):(?P<second>\d+) (?P<timezone>\w+) (?P<year>\d+)")
+    parser = re.compile(
+        r"(?P<day_of_week>\w+) (?P<month>\w+) (?P<day>\d+) (?P<hour>\d+):(?P<minute>\d+):(?P<second>\d+) (?P<timezone>\w+) (?P<year>\d+)"
+    )
     parsed = df["datetime"].apply(lambda x: parser.match(x).groupdict())
     df["datetime_str"] = parsed.apply(lambda x: f"{x['year']}-{x['month']}-{x['day']} {x['hour']}:{x['minute']}:{x['second']}")
     with st.spinner("Mapping dates..."):
@@ -52,6 +58,7 @@ def map_dates(df):
     end = time.time()
     print(f"parsed in {end - start:.2f} seconds")
     return df
+
 
 df = map_dates(df).copy()
 
@@ -64,9 +71,8 @@ opening_time = df_today[df_today["count"] > 20].index.min()
 df_today = df_today[df_today.index >= opening_time]
 
 # same plot as above but instead, show last 7 historical lines for the same day of the week
-historical_weeks = st.slider("Historical weeks", 1, 7, 3)
 today = pd.Timestamp.today()
-df_last = df[df["date"] >= today - pd.Timedelta(weeks=historical_weeks)]
+df_last = df[df["date"] >= today - pd.Timedelta(weeks=truncate_weeks)]
 df_last = df_last.sort_values("datetime")
 df_last = df_last.set_index("datetime")
 fig, ax = plt.subplots(figsize=(7, 3))
@@ -98,7 +104,7 @@ for date, df_date in df_last.groupby("date"):
 # show today in a thick black line
 ax.plot(df_today["time_on_day"], df_today["count"], linewidth=2, color="black", label="today")
 ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-ax.set_title(f"RSF occupancy by hour (last {historical_weeks} weeks)")
+ax.set_title(f"RSF occupancy by hour (last {truncate_weeks} weeks)")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 fig.tight_layout()
 st.pyplot(fig)
