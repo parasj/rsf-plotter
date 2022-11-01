@@ -77,7 +77,8 @@ df_last = df_last.set_index("datetime")
 fig, ax = plt.subplots(figsize=(7, 3))
 
 # Set time on day to be same time but replace year/month/day with today's
-df_today["time_on_day"] = df_today.index.time.apply(lambda x: today.replace(hour=x.hour, minute=x.minute, second=x.second))
+df_today["time_on_day"] = df_today.index.time
+df_today["time_on_day"] = df_today["time_on_day"].apply(lambda x: today.replace(hour=x.hour, minute=x.minute, second=x.second))
 
 for date, df_date in df_last.groupby("date"):
     # if same day of the week
@@ -87,10 +88,8 @@ for date, df_date in df_last.groupby("date"):
         df_date = df_date.resample("5min").max()
         opening_time = pd.Timestamp(df_date[df_date["count"] > 20].index.min())
         df_date = df_date[df_date.index >= opening_time]
-        midnight_time = pd.Timestamp(date).replace(hour=0, minute=0, second=0)
-        df_date["time_on_day"] = (df_date.index - midnight_time) / pd.Timedelta(minutes=1)
-        # convert to format for DateFormatter
-        df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: pd.Timestamp.today(tz="America/Los_Angeles").replace(hour=int(x // 60), minute=int(x) % 60))
+        df_date["time_on_day"] = df_date.index.time
+        df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: today.replace(hour=x.hour, minute=x.minute, second=x.second))
         label = f"{date.strftime('%a %m/%d')}"
         ax.plot(df_date["time_on_day"], df_date["count"], linewidth=1, label=label)
 
