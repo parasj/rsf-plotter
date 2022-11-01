@@ -79,7 +79,8 @@ fig, ax = plt.subplots(figsize=(7, 3))
 # today data
 today_midnight_time = today.replace(hour=0, minute=0, second=0)
 df_today["time_on_day"] = (df_today.index - today_midnight_time) / pd.Timedelta(minutes=1)
-df_today["time_on_day"] = df_today["time_on_day"].apply(lambda x: pd.Timestamp.today().replace(hour=min(max(int(x // 60), 0), 23), minute=min(max(int(x % 60), 0), 59)))
+# set date to today so that we can use the same logic below
+df_today["time_on_day"] = df_today["time_on_day"].apply(lambda x: today_midnight_time + pd.Timedelta(minutes=x))
 
 for date, df_date in df_last.groupby("date"):
     # if same day of the week
