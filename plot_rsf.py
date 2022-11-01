@@ -10,37 +10,50 @@ import matplotlib.dates as mdates
 
 plt.style.use('ggplot')
 
-truncate_months = st.slider('Truncate months', 0, 12, 1)
+truncate_months = st.sidebar.slider('Truncate months', 0, 12, 1)
 
-with st.spinner("Loading data..."):
-    start = time.time()
-    data_url = "https://people.eecs.berkeley.edu/~paras/rsf_occupancy.jsonl"
-    with urllib.request.urlopen(data_url) as f:
-        jsonl = f.read().decode("utf-8").strip().split("\n")
-        n_records = 60 * 24 * 30 * truncate_months
-        records = [json.loads(line) for line in jsonl[-n_records:]]
-        df = pd.DataFrame(records)
-    end = time.time()
-print(f"loaded in {end - start:.2f} seconds")
-st.write(f"Loaded {len(df)} records")
+@st.cache(ttl=120, suppress_st_warning=True)
+def load_data():
+    with st.spinner("Loading data..."):
+        start = time.time()
+        data_url = "https://people.eecs.berkeley.edu/~paras/rsf_occupancy.jsonl"
+        with urllib.request.urlopen(data_url) as f:
+            jsonl = f.read().decode("utf-8").strip().split("\n")
+            if truncate_months > 0:
+                n_records = 60 * 24 * 30 * truncate_months
+                records = [json.loads(line) for line in jsonl[-n_records:]]
+            else:
+                records = [json.loads(line) for line in jsonl]
+            df = pd.DataFrame(records)
+        end = time.time()
+    print(f"loaded in {end - start:.2f} seconds")
+    st.sidebar.write(f"Loaded {len(df)} records")
+    return df
+
+df = load_data().copy()
+last_rec = df.iloc[-1]
+st.write(f"### RSF occupancy as of {last_rec['datetime']}")
+st.write(f"**{int(last_rec['count'])}** people in RSF, **{int(last_rec['count'] / 150)}**% of capacity")
 
 @lru_cache(maxsize=4096)
 def map_date(date):
     return pd.to_datetime(date, format="%Y-%b-%d %H:%M:%S", cache=True)
 
-start = time.time()
-with st.spinner("Extracting dates..."):
+@st.cache(ttl=120, suppress_st_warning=True)
+def map_dates(df):
+    start = time.time()
     parser = re.compile(r"(?P<day_of_week>\w+) (?P<month>\w+) (?P<day>\d+) (?P<hour>\d+):(?P<minute>\d+):(?P<second>\d+) (?P<timezone>\w+) (?P<year>\d+)")
     parsed = df["datetime"].apply(lambda x: parser.match(x).groupdict())
-with st.spinner("Canonicalizing dates..."):
     df["datetime_str"] = parsed.apply(lambda x: f"{x['year']}-{x['month']}-{x['day']} {x['hour']}:{x['minute']}:{x['second']}")
-with st.spinner("Mapping dates..."):
-    df["datetime"] = df["datetime_str"].apply(map_date)
-with st.spinner("Writing results..."):
+    with st.spinner("Mapping dates..."):
+        df["datetime"] = df["datetime_str"].apply(map_date)
     df = df.drop(columns=["datetime_str"])
     df["date"] = df["datetime"].dt.date
-end = time.time()
-print(f"parsed in {end - start:.2f} seconds")
+    end = time.time()
+    print(f"parsed in {end - start:.2f} seconds")
+    return df
+
+df = map_dates(df).copy()
 
 # show detailed data for today since 7am
 today = pd.Timestamp.today()
