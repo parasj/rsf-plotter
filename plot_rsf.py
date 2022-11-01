@@ -66,19 +66,18 @@ df = map_dates(df).copy()
 df_today = df[df["date"] == df["date"].max()]
 df_today = df_today.sort_values("datetime")
 df_today = df_today.set_index("datetime")
-opening_time = pd.Timestamp(df_today[df_today["count"] > 20].index.min())
+opening_time = pd.Timestamp(df_today[df_today["count"] > 20].index.min(), tz="America/Los_Angeles")
 df_today = df_today[df_today.index >= opening_time]
 
 # same plot as above but instead, show last 7 historical lines for the same day of the week
-today = pd.Timestamp(df["datetime"].max())
+today = pd.Timestamp(df["datetime"].max(), tz="America/Los_Angeles")
 df_last = df.copy()
 df_last = df_last.sort_values("datetime")
 df_last = df_last.set_index("datetime")
 fig, ax = plt.subplots(figsize=(7, 3))
 
 # Set time on day to be same time but replace year/month/day with today's
-df_today["time_on_day"] = df_today.index.time
-df_today["time_on_day"] = df_today["time_on_day"].apply(lambda x: today.replace(hour=x.hour, minute=x.minute, second=x.second))
+df_today["time_on_day"] = df_today.index.time.apply(lambda x: today.replace(hour=x.hour, minute=x.minute, second=x.second))
 
 for date, df_date in df_last.groupby("date"):
     # if same day of the week
@@ -86,12 +85,12 @@ for date, df_date in df_last.groupby("date"):
     today_dow = today.strftime("%a")
     if date_dow == today_dow:
         df_date = df_date.resample("5min").max()
-        opening_time = pd.Timestamp(df_date[df_date["count"] > 20].index.min())
+        opening_time = pd.Timestamp(df_date[df_date["count"] > 20].index.min(), tz="America/Los_Angeles")
         df_date = df_date[df_date.index >= opening_time]
-        midnight_time = pd.Timestamp(date).replace(hour=0, minute=0, second=0)
+        midnight_time = pd.Timestamp(date, tz="America/Los_Angeles").replace(hour=0, minute=0, second=0)
         df_date["time_on_day"] = (df_date.index - midnight_time) / pd.Timedelta(minutes=1)
         # convert to format for DateFormatter
-        df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: pd.Timestamp.today().replace(hour=int(x // 60), minute=int(x) % 60))
+        df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: pd.Timestamp.today(tz="America/Los_Angeles").replace(hour=int(x // 60), minute=int(x) % 60))
         label = f"{date.strftime('%a %m/%d')}"
         ax.plot(df_date["time_on_day"], df_date["count"], linewidth=1, label=label)
 
