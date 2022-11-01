@@ -77,7 +77,7 @@ df_last = df_last.set_index("datetime")
 fig, ax = plt.subplots(figsize=(7, 3))
 
 # today data
-df_today = df[df["date"] == today.date()]
+df_today = df[df["date"] == df["date"].max()]
 df_today = df_today.sort_values("datetime")
 df_today = df_today.set_index("datetime")
 today_opening_time = df_today[df_today["count"] > 20].index.min()
