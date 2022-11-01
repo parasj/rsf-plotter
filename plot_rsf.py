@@ -1,3 +1,4 @@
+from functools import lru_cache
 import streamlit as st
 import json
 import pandas as pd
@@ -9,7 +10,7 @@ import matplotlib.dates as mdates
 
 plt.style.use('ggplot')
 
-truncate_months = st.slider('Truncate months', 0, 12, 3)
+truncate_months = st.slider('Truncate months', 0, 12, 1)
 
 with st.spinner("Loading data..."):
     start = time.time()
@@ -21,8 +22,9 @@ with st.spinner("Loading data..."):
         df = pd.DataFrame(records)
     end = time.time()
 print(f"loaded in {end - start:.2f} seconds")
+st.write(f"Loaded {len(df)} records")
 
-@st.cache
+@lru_cache(maxsize=4096)
 def map_date(date):
     return pd.to_datetime(date, format="%Y-%b-%d %H:%M:%S", cache=True)
 
