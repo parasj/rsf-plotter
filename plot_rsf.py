@@ -9,11 +9,13 @@ import matplotlib.dates as mdates
 
 plt.style.use('ggplot')
 
+truncate_months = st.sidebar.slider('Truncate months', 0, 12, 3)
 start = time.time()
 data_url = "https://people.eecs.berkeley.edu/~paras/rsf_occupancy.jsonl"
 with urllib.request.urlopen(data_url) as f:
     jsonl = f.read().decode("utf-8").strip().split("\n")
-    records = [json.loads(line) for line in jsonl]
+    n_records = 60 * 24 * 30 * truncate_months
+    records = [json.loads(line) for line in jsonl[-n_records:]]
     df = pd.DataFrame(records)
 end = time.time()
 print(f"loaded in {end - start:.2f} seconds")
