@@ -67,18 +67,18 @@ today = pd.Timestamp.today()
 df_today = df[df["date"] == today]
 df_today = df_today.sort_values("datetime")
 df_today = df_today.set_index("datetime")
-opening_time = df_today[df_today["count"] > 20].index.min()
+opening_time = pd.Timestamp(df_today[df_today["count"] > 20].index.min())
 df_today = df_today[df_today.index >= opening_time]
 
 # same plot as above but instead, show last 7 historical lines for the same day of the week
 today = pd.Timestamp.today()
-df_last = df[df["date"] >= today - pd.Timedelta(weeks=truncate_weeks)]
+df_last = df[df["date"] >= pd.Timestamp(today - pd.Timedelta(weeks=truncate_weeks))]
 df_last = df_last.sort_values("datetime")
 df_last = df_last.set_index("datetime")
 fig, ax = plt.subplots(figsize=(7, 3))
 
 # today data
-df_today = df[df["date"] == today]
+df_today = df[df["date"] == pd.Timestamp.today()]
 df_today = df_today.sort_values("datetime")
 df_today = df_today.set_index("datetime")
 today_opening_time = df_today[df_today["count"] > 20].index.min()
@@ -93,7 +93,7 @@ for date, df_date in df_last.groupby("date"):
     today_dow = today.strftime("%a")
     if date_dow == today_dow:
         df_date = df_date.resample("5min").max()
-        opening_time = df_date[df_date["count"] > 20].index.min()
+        opening_time = pd.Timestamp(df_date[df_date["count"] > 20].index.min())
         df_date = df_date[df_date.index >= opening_time]
         midnight_time = pd.Timestamp(date).replace(hour=0, minute=0, second=0)
         df_date["time_on_day"] = (df_date.index - midnight_time) / pd.Timedelta(minutes=1)
@@ -103,7 +103,7 @@ for date, df_date in df_last.groupby("date"):
         ax.plot(df_date["time_on_day"], df_date["count"], linewidth=1, label=label)
 
 # show today in a thick black line
-st.dataframe(df_today)
+st.write(f"Today: {len(df_today)} records")
 ax.plot(df_today["time_on_day"], df_today["count"], linewidth=2, color="black", label="today")
 ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 ax.set_title(f"RSF occupancy by hour (last {truncate_weeks} weeks)")
@@ -111,13 +111,13 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 fig.tight_layout()
 st.pyplot(fig)
 
-# # aggregate max count by date, and then show bar chart
-# df_max = df.groupby("date").max()
-# df_max = df_max.sort_values("datetime")
-# df_max = df_max.set_index("datetime")
-# fig, ax = plt.subplots(figsize=(7, 2))
-# ax.plot(df_max.index, df_max["count"], marker="o", markersize=2, linewidth=1)
-# ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-# ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
-# ax.set_title("Peak RSF occupancy by day")
-# st.plotly_chart(fig)
+# aggregate max count by date, and then show bar chart
+df_max = df.groupby("date").max()
+df_max = df_max.sort_values("datetime")
+df_max = df_max.set_index("datetime")
+fig, ax = plt.subplots(figsize=(7, 2))
+ax.plot(df_max.index, df_max["count"], marker="o", markersize=2, linewidth=1)
+ax.xaxis.set_major_locator(mdates.WeekdayLocator())
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
+ax.set_title("Peak RSF occupancy by day")
+st.plotly_chart(fig)
