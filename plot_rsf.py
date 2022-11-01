@@ -101,7 +101,9 @@ for date, df_date in df_last.groupby("date"):
         df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: pd.Timestamp.today().replace(hour=int(x // 60), minute=int(x) % 60))
         label = f"{date.strftime('%a %m/%d')}"
         ax.plot(df_date["time_on_day"], df_date["count"], linewidth=1, label=label)
+
 # show today in a thick black line
+st.dataframe(df_today)
 ax.plot(df_today["time_on_day"], df_today["count"], linewidth=2, color="black", label="today")
 ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 ax.set_title(f"RSF occupancy by hour (last {truncate_weeks} weeks)")
