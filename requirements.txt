@@ -1,3 +1,4 @@
 pandas
 plotly
 matplotlib
+streamlit-autorefresh

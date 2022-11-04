@@ -1,5 +1,6 @@
 from functools import lru_cache
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 import json
 import pandas as pd
 import urllib
@@ -62,7 +63,21 @@ def map_dates(df):
     return df
 
 
+st_autorefresh(interval=10000)
 df = map_dates(df).copy()
+
+# ask for plot options
+col1, col2 = st.columns(2)
+with col1:
+    apply_ema = st.checkbox("Apply EMA", value=True)
+with col2:
+    if apply_ema:
+        ema_span = st.slider("EMA span", 1, 60, 10)
+
+
+def ema(df):
+    return df.ewm(span=ema_span).mean() if apply_ema else df
+
 
 # show detailed data for today since 7am
 df_today = df[df["date"] == df["date"].max()]
@@ -93,23 +108,28 @@ for date, df_date in df_last.groupby("date"):
         df_date["time_on_day"] = df_date.index.time
         df_date["time_on_day"] = df_date["time_on_day"].apply(lambda x: today.replace(hour=x.hour, minute=x.minute, second=x.second))
         label = f"{date.strftime('%a %m/%d')}"
-        ax.plot(df_date["time_on_day"], df_date["count"], linewidth=1, label=label)
+        ax.plot(df_date["time_on_day"], ema(df_date["count"]), linewidth=1, label=label)
 
 # show today in a thick black line
-ax.plot(df_today["time_on_day"], df_today["count"], linewidth=2, color="black", label="today")
+ax.plot(df_today["time_on_day"], ema(df_today["count"]), linewidth=2, color="black", label="today")
 ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 ax.set_title(f"RSF occupancy by hour (last {truncate_weeks} weeks)")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+
+# show line at 150
+ax.axhline(150, color="red", linestyle="--", linewidth=1)
+
 fig.tight_layout()
 st.pyplot(fig)
 
-# aggregate max count by date, and then show bar chart
-df_max = df.groupby("date").max()
-df_max = df_max.sort_values("datetime")
-df_max = df_max.set_index("datetime")
-fig, ax = plt.subplots(figsize=(7, 2))
-ax.plot(df_max.index, df_max["count"], marker="o", markersize=2, linewidth=1)
-ax.xaxis.set_major_locator(mdates.WeekdayLocator())
-ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
-ax.set_title("Peak RSF occupancy by day")
-st.plotly_chart(fig)
+if st.button("Show historical data"):
+    # aggregate max count by date, and then show bar chart
+    df_max = df.groupby("date").max()
+    df_max = df_max.sort_values("datetime")
+    df_max = df_max.set_index("datetime")
+    fig, ax = plt.subplots(figsize=(7, 2))
+    ax.plot(df_max.index, df_max["count"], marker="o", markersize=2, linewidth=1)
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
+    ax.set_title("Peak RSF occupancy by day")
+    st.plotly_chart(fig)
